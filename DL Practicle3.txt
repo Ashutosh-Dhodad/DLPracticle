@@ -1,0 +1,59 @@
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+
+# Loading and preprocessing the CIFAR-10 dataset
+(train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data() #CIFAR-10 is a dataset of 60,000 32x32 color images in 10 different classes (e.g., airplane, car, cat, dog).
+train_images, test_images = train_images / 255.0, test_images / 255.0
+
+# Display sample images
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer','dog', 'frog', 'horse', 'ship', 'truck']
+plt.figure(figsize=(10,10))
+for i in range(9): # picks the first 9 images from the training set
+    plt.subplot(3,3,i+1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(train_images[i]) #Displays the image.
+    plt.xlabel(class_names[train_labels[i][0]])  #Labels each image according to its corresponding class
+plt.show()
+
+
+
+
+
+
+# Building the CNN model
+model = models.Sequential([  #Sequential model, which is a linear stack of layers
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)), #Adds 32 filters, each of size 3x3, to the image. ReLu introduces non-linearity to the model
+    layers.MaxPooling2D((2, 2)), #Pooling layers reduce the spatial size of the feature maps, retaining the most important information. reduces each 2x2 block to the maximum value
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.Flatten(), #The 3D feature maps are flattened into a 1D vector before passing it into fully connected layers
+    layers.Dense(64, activation='relu'), # Full Connected, A hidden layer with 64 neurons and ReLU activation.
+    layers.Dense(10) #Output layer with 10 neurons, one for each CIFAR-10 class
+])
+
+# Model summary
+model.summary() #prints out the architecture of the model, including the number of parameters (weights) that need to be trained in each layer.
+
+
+
+
+
+
+# Compiling and training the model
+model.compile(optimizer='adam', #popular optimization algorithm that adapts the learning rate during training.
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),  #SparseCategoricalCrossentropy is used because we are dealing with multi-class classification (10 classes),from_logits=True argument indicates that the model outputs raw scores (logits) instead of probabilities, and the function will apply softmax internally
+              metrics=['accuracy']) #track the accuracy during training and validation
+
+history = model.fit(train_images, train_labels, epochs=10,
+                    validation_data=(test_images, test_labels))
+
+
+
+
+
+# Evaluating the model on test data
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2) #on the test set to get the final accuracy and loss on unseen data
+print(f'\nTest accuracy: {test_acc}')
